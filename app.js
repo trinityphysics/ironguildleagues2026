@@ -20,6 +20,8 @@ const STORAGE_KEY_ADMIN   = 'ig_admin_session';
 const STORAGE_KEY_PASSWORD = 'ig_admin_pwd_2026';
 const STORAGE_KEY_PRIZE_FUND = 'ig_prize_fund_2026';
 
+const MAX_PRIZE_GP = 2_147_000_000;
+
 // Default password – can be changed via the admin panel.
 // This is stored hashed (SHA-256) in localStorage after first change.
 const DEFAULT_PASSWORD = 'IronGuild2026!';
@@ -477,7 +479,11 @@ function renderAdminPendingPledges() {
     btn.addEventListener('click', () => {
       const { rsn, amount, ts } = btn.dataset;
       const pledges = getPrizePledges();
-      const idx = pledges.findIndex(p => p.rsn === rsn && p.amount === Number(amount) && String(p.timestamp) === ts);
+      const idx = pledges.findIndex(p =>
+        p.rsn.toLowerCase() === rsn.toLowerCase() &&
+        p.amount === Number(amount) &&
+        String(p.timestamp) === ts
+      );
       if (idx !== -1) {
         pledges[idx].status = 'approved';
         savePrizePledges(pledges);
@@ -493,7 +499,11 @@ function renderAdminPendingPledges() {
     btn.addEventListener('click', () => {
       const { rsn, amount, ts } = btn.dataset;
       const pledges = getPrizePledges();
-      const idx = pledges.findIndex(p => p.rsn === rsn && p.amount === Number(amount) && String(p.timestamp) === ts);
+      const idx = pledges.findIndex(p =>
+        p.rsn.toLowerCase() === rsn.toLowerCase() &&
+        p.amount === Number(amount) &&
+        String(p.timestamp) === ts
+      );
       if (idx !== -1) {
         pledges.splice(idx, 1);
         savePrizePledges(pledges);
@@ -519,8 +529,16 @@ function wirePrizeFundModal() {
       if (msgEl) { msgEl.textContent = 'Please enter your RSN.'; msgEl.className = 'admin-msg error'; msgEl.classList.remove('hidden'); }
       return;
     }
+    if (rsn.length > 12) {
+      if (msgEl) { msgEl.textContent = 'RSN must be 12 characters or fewer.'; msgEl.className = 'admin-msg error'; msgEl.classList.remove('hidden'); }
+      return;
+    }
     if (!amount || amount < 1) {
-      if (msgEl) { msgEl.textContent = 'Please enter a valid GP amount.'; msgEl.className = 'admin-msg error'; msgEl.classList.remove('hidden'); }
+      if (msgEl) { msgEl.textContent = 'Please enter a valid GP amount (minimum 1 GP).'; msgEl.className = 'admin-msg error'; msgEl.classList.remove('hidden'); }
+      return;
+    }
+    if (amount > MAX_PRIZE_GP) {
+      if (msgEl) { msgEl.textContent = `Amount cannot exceed ${MAX_PRIZE_GP.toLocaleString()} GP.`; msgEl.className = 'admin-msg error'; msgEl.classList.remove('hidden'); }
       return;
     }
 
