@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IronGuild – Demonic Pact Leagues 2026</title>
+  <link rel="stylesheet" href="styles.css" />
+  <!-- RuneScape-flavoured font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- ===================== EMBER PARTICLES ===================== -->
+  <div id="embers-container" aria-hidden="true"></div>
+
+  <!-- ===================== HEADER ===================== -->
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="header-flame-left" aria-hidden="true">
+        <span class="flame">🔥</span><span class="flame">🔥</span>
+      </div>
+      <div class="header-text">
+        <h1 class="site-title">IronGuild</h1>
+        <p class="site-subtitle">Demonic Pact Leagues 2026</p>
+      </div>
+      <div class="header-flame-right" aria-hidden="true">
+        <span class="flame">🔥</span><span class="flame">🔥</span>
+      </div>
+    </div>
+    <p class="header-tagline">Forge your legacy in the fires of the Demonic Pact</p>
+  </header>
+
+  <!-- ===================== LEADERBOARD PREVIEW (always visible) ===================== -->
+  <section class="leaderboard-preview" id="leaderboard-preview">
+    <h2 class="section-title">⚔️ Clan Rankings ⚔️</h2>
+    <div id="top3-display" class="top3-display">
+      <div class="loading-spinner">Loading rankings from Wise Old Man…</div>
+    </div>
+    <a href="https://wiseoldman.net/groups/5475" target="_blank" rel="noopener" class="wom-link">
+      View Full Group on Wise Old Man ↗
+    </a>
+  </section>
+
+  <!-- ===================== TASK GRID ===================== -->
+  <main>
+    <h2 class="section-title tasks-title">🏆 Clan Challenges 🏆</h2>
+    <p class="tasks-description">
+      Complete these challenges during the Demonic Pact Leagues event to earn exclusive rewards for your clan.
+      Tap a tile to discover what glory awaits.
+    </p>
+
+    <div class="task-grid" id="task-grid">
+
+      <!-- Tile 1 – First to MAX -->
+      <article class="task-tile" data-task-id="first-max" tabindex="0" role="button" aria-label="First to MAX – click for details">
+        <div class="tile-status-badge" id="badge-first-max">Unclaimed</div>
+        <div class="tile-icon">🏆</div>
+        <h3 class="tile-title">First to MAX</h3>
+        <p class="tile-desc">Be the first IronGuild member to achieve level 99 in every skill.</p>
+        <div class="tile-reward-preview">Reward: <span class="reward-tag">Bond</span></div>
+        <div class="tile-claimed-info" id="claimed-first-max"></div>
+      </article>
+
+      <!-- Tile 2 – First to Dragon Tier -->
+      <article class="task-tile" data-task-id="first-dragon-tier" tabindex="0" role="button" aria-label="First to Dragon Tier – click for details">
+        <div class="tile-status-badge" id="badge-first-dragon-tier">Unclaimed</div>
+        <div class="tile-icon">🐉</div>
+        <h3 class="tile-title">First to Dragon Tier</h3>
+        <p class="tile-desc">Be the first to earn the prestigious Dragon Tier rank and claim the dragon trophy.</p>
+        <div class="tile-reward-preview">Reward: <span class="reward-tag">Ingame Icon</span> <span class="reward-tag">Discord Role</span></div>
+        <div class="tile-claimed-info" id="claimed-first-dragon-tier"></div>
+      </article>
+
+      <!-- Tile 3 – First to Tier 8 Relic -->
+      <article class="task-tile" data-task-id="first-tier8-relic" tabindex="0" role="button" aria-label="First to Tier 8 Relic – click for details">
+        <div class="tile-status-badge" id="badge-first-tier8-relic">Unclaimed</div>
+        <div class="tile-icon">💎</div>
+        <h3 class="tile-title">First to Tier 8 Relic</h3>
+        <p class="tile-desc">Be the first to unlock the ultimate Tier 8 relic power.</p>
+        <div class="tile-reward-preview">Reward: <span class="reward-tag">Bond</span></div>
+        <div class="tile-claimed-info" id="claimed-first-tier8-relic"></div>
+      </article>
+
+      <!-- Tile 4 – First to 3 Echo Items -->
+      <article class="task-tile" data-task-id="first-echo-items" tabindex="0" role="button" aria-label="First to 3 Echo Items – click for details">
+        <div class="tile-status-badge" id="badge-first-echo-items">Unclaimed</div>
+        <div class="tile-icon">🔮</div>
+        <h3 class="tile-title">First to 3 Echo Items</h3>
+        <p class="tile-desc">Be the first to obtain echo items from three entirely different bosses.</p>
+        <div class="tile-reward-preview">Reward: <span class="reward-tag">Bond</span></div>
+        <div class="tile-claimed-info" id="claimed-first-echo-items"></div>
+      </article>
+
+      <!-- Tile 5 – First to 40 Pact Points -->
+      <article class="task-tile" data-task-id="first-pact-points" tabindex="0" role="button" aria-label="First to 40 Pact Points – click for details">
+        <div class="tile-status-badge" id="badge-first-pact-points">Unclaimed</div>
+        <div class="tile-icon">⚡</div>
+        <h3 class="tile-title">First to 40 Pact Points</h3>
+        <p class="tile-desc">Race to accumulate 40 Pact Points in your combat tree before anyone else.</p>
+        <div class="tile-reward-preview">Reward: <span class="reward-tag">Bond</span></div>
+        <div class="tile-claimed-info" id="claimed-first-pact-points"></div>
+      </article>
+
+      <!-- Tile 6 – First to Max Combat Stats -->
+      <article class="task-tile" data-task-id="first-max-combat" tabindex="0" role="button" aria-label="First to Max Combat Stats – click for details">
+        <div class="tile-status-badge" id="badge-first-max-combat">Unclaimed</div>
+        <div class="tile-icon">⚔️</div>
+        <h3 class="tile-title">First to Max Combat</h3>
+        <p class="tile-desc">First to achieve 99 in all combat skills: Attack, Strength, Defence, HP, Prayer, Ranged & Magic.</p>
+        <div class="tile-reward-preview">Reward: <span class="reward-tag">Bond</span></div>
+        <div class="tile-claimed-info" id="claimed-first-max-combat"></div>
+      </article>
+
+      <!-- Tile 7 – Top 3 Players (WOM API) -->
+      <article class="task-tile tile-wide" data-task-id="top3-players" tabindex="0" role="button" aria-label="Top 3 Players – click for full leaderboard">
+        <div class="tile-icon">🥇</div>
+        <h3 class="tile-title">Top 3 Players</h3>
+        <div id="top3-tile-preview" class="top3-tile-inner">
+          <div class="loading-spinner-sm">Loading…</div>
+        </div>
+        <div class="tile-reward-preview">Rewards: <span class="reward-tag">Rank Up</span> <span class="reward-tag">Discord Role</span></div>
+        <p class="tile-click-hint">Tap for full leaderboard</p>
+      </article>
+
+      <!-- Tile 8 – Here Be Dragons -->
+      <article class="task-tile tile-wide tile-dragon" data-task-id="here-be-dragons" tabindex="0" role="button" aria-label="Here Be Dragons – click to see dragon members">
+        <div class="tile-icon">🐲</div>
+        <h3 class="tile-title">Here Be Dragons</h3>
+        <p class="tile-desc">A hall of honour for those who have achieved Dragon Status within the clan.</p>
+        <div id="dragon-tile-preview" class="dragon-tile-preview">
+          <span class="dragon-count-label">Loading…</span>
+        </div>
+        <div class="tile-reward-preview">Rewards: <span class="reward-tag">Discord Role</span> <span class="reward-tag">Ingame Icon</span></div>
+        <p class="tile-click-hint">Tap to see all Dragon members</p>
+      </article>
+
+    </div>
+  </main>
+
+  <!-- ===================== FOOTER ===================== -->
+  <footer class="site-footer">
+    <p>IronGuild OSRS Clan &bull; Demonic Pact Leagues 2026</p>
+    <button id="admin-toggle-btn" class="admin-toggle-btn" aria-label="Toggle admin panel">
+      🔐 Admin
+    </button>
+  </footer>
+
+  <!-- ===================== ADMIN LOGIN MODAL ===================== -->
+  <div id="admin-login-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="admin-login-title">
+    <div class="modal-box admin-box">
+      <button class="modal-close" id="admin-login-close" aria-label="Close">&times;</button>
+      <h2 id="admin-login-title" class="modal-title">🔐 Admin Login</h2>
+      <p class="modal-subtitle">Enter the admin password to manage the event.</p>
+      <form id="admin-login-form" autocomplete="off">
+        <label for="admin-password-input" class="form-label">Password</label>
+        <input type="password" id="admin-password-input" class="form-input" placeholder="Enter password…" autocomplete="current-password" />
+        <p id="admin-login-error" class="form-error hidden">Incorrect password. Try again.</p>
+        <button type="submit" class="btn btn-fire">Login</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===================== ADMIN PANEL ===================== -->
+  <div id="admin-panel" class="admin-panel hidden" role="complementary" aria-label="Admin Panel">
+    <div class="admin-panel-inner">
+      <h3 class="admin-panel-title">⚙️ Admin Panel</h3>
+      <button id="admin-logout-btn" class="btn btn-outline btn-sm">Logout</button>
+
+      <div class="admin-section">
+        <h4>Claim a Task</h4>
+        <label for="admin-task-select" class="form-label">Task</label>
+        <select id="admin-task-select" class="form-input">
+          <option value="">— Select task —</option>
+          <option value="first-max">First to MAX</option>
+          <option value="first-dragon-tier">First to Dragon Tier</option>
+          <option value="first-tier8-relic">First to Tier 8 Relic</option>
+          <option value="first-echo-items">First to 3 Echo Items</option>
+          <option value="first-pact-points">First to 40 Pact Points</option>
+          <option value="first-max-combat">First to Max Combat</option>
+        </select>
+        <label for="admin-claimer-input" class="form-label">Claimed By (username)</label>
+        <input type="text" id="admin-claimer-input" class="form-input" placeholder="RSN…" maxlength="12" autocomplete="off" />
+        <div class="admin-btn-row">
+          <button id="admin-claim-btn" class="btn btn-fire">Mark as Claimed</button>
+          <button id="admin-unclaim-btn" class="btn btn-outline">Remove Claim</button>
+        </div>
+        <p id="admin-claim-msg" class="admin-msg hidden"></p>
+      </div>
+
+      <div class="admin-section">
+        <h4>Here Be Dragons – Manage Members</h4>
+        <div id="dragon-members-list" class="dragon-members-list"></div>
+        <label for="admin-dragon-input" class="form-label">Add Dragon Member</label>
+        <div class="admin-btn-row">
+          <input type="text" id="admin-dragon-input" class="form-input" placeholder="RSN…" maxlength="12" autocomplete="off" />
+          <button id="admin-dragon-add-btn" class="btn btn-fire">Add</button>
+        </div>
+        <p id="admin-dragon-msg" class="admin-msg hidden"></p>
+      </div>
+
+      <div class="admin-section">
+        <h4>Change Admin Password</h4>
+        <label for="admin-new-password" class="form-label">New Password</label>
+        <input type="password" id="admin-new-password" class="form-input" placeholder="New password…" autocomplete="new-password" />
+        <label for="admin-confirm-password" class="form-label">Confirm Password</label>
+        <input type="password" id="admin-confirm-password" class="form-input" placeholder="Confirm password…" autocomplete="new-password" />
+        <button id="admin-change-pwd-btn" class="btn btn-fire">Change Password</button>
+        <p id="admin-pwd-msg" class="admin-msg hidden"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== TASK DETAIL MODAL ===================== -->
+  <div id="task-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="task-modal-title">
+    <div class="modal-box task-box">
+      <button class="modal-close" id="task-modal-close" aria-label="Close">&times;</button>
+      <div id="task-modal-icon" class="modal-icon"></div>
+      <h2 id="task-modal-title" class="modal-title"></h2>
+      <div id="task-modal-status" class="modal-status"></div>
+      <p id="task-modal-body" class="modal-body"></p>
+      <div id="task-modal-rewards" class="modal-rewards"></div>
+      <!-- Admin claim controls (shown when admin is logged in) -->
+      <div id="task-modal-admin" class="task-modal-admin hidden">
+        <div class="admin-quick-claim">
+          <input type="text" id="quick-claim-input" class="form-input" placeholder="RSN…" maxlength="12" />
+          <button id="quick-claim-btn" class="btn btn-fire btn-sm">Mark Claimed</button>
+          <button id="quick-unclaim-btn" class="btn btn-outline btn-sm">Remove</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== LEADERBOARD MODAL ===================== -->
+  <div id="leaderboard-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="lb-modal-title">
+    <div class="modal-box lb-box">
+      <button class="modal-close" id="lb-modal-close" aria-label="Close">&times;</button>
+      <div class="modal-icon">🏅</div>
+      <h2 id="lb-modal-title" class="modal-title">Top Players – IronGuild Demonic Pact</h2>
+      <p class="modal-body">League points leaderboard for IronGuild members. Data powered by <strong>Wise Old Man</strong>.</p>
+      <div id="lb-modal-content" class="lb-modal-content">
+        <div class="loading-spinner">Loading leaderboard…</div>
+      </div>
+      <div class="modal-rewards">
+        <p class="rewards-label">🎁 Rewards</p>
+        <span class="reward-tag">Rank Up</span>
+        <span class="reward-tag">Discord Role</span>
+      </div>
+      <a href="https://wiseoldman.net/groups/5475" target="_blank" rel="noopener" class="btn btn-outline" style="margin-top:1rem;display:inline-block;">
+        View on Wise Old Man ↗
+      </a>
+    </div>
+  </div>
+
+  <!-- ===================== HERE BE DRAGONS MODAL ===================== -->
+  <div id="dragons-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="dragons-modal-title">
+    <div class="modal-box dragons-box">
+      <button class="modal-close" id="dragons-modal-close" aria-label="Close">&times;</button>
+      <div class="modal-icon">🐲</div>
+      <h2 id="dragons-modal-title" class="modal-title">Here Be Dragons</h2>
+      <p class="modal-body">
+        These IronGuild members have achieved the prestigious <strong>Dragon Status</strong> during the
+        Demonic Pact Leagues event. A true mark of dedication and power.
+      </p>
+      <div id="dragons-modal-list" class="dragons-modal-list">
+        <p class="no-entries">No dragon members recorded yet. Be the first!</p>
+      </div>
+      <div class="modal-rewards">
+        <p class="rewards-label">🎁 Rewards</p>
+        <span class="reward-tag">Discord Role</span>
+        <span class="reward-tag">Ingame Icon</span>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
