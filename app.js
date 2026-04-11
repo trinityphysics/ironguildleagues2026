@@ -173,22 +173,6 @@ function getApprovedPrizeFundTotal() {
   return getApprovedPrizePledges().reduce((sum, p) => sum + p.amount, 0);
 }
 
-// Returns array of { rsn, total } for each unique contributor (approved only)
-function getApprovedContributors() {
-  const approved = getApprovedPrizePledges();
-  const map = {};
-  for (const p of approved) {
-    const key = p.rsn.toLowerCase();
-    if (!map[key]) map[key] = { rsn: p.rsn, total: 0 };
-    map[key].total += p.amount;
-  }
-  return Object.values(map).sort((a, b) => b.total - a.total);
-}
-
-// Returns a Set of lowercase RSNs who have approved pledges
-function getContributorRSNSet() {
-  return new Set(getApprovedPrizePledges().map(p => p.rsn.toLowerCase()));
-}
 
 function isAdminLoggedIn() {
   return sessionStorage.getItem(STORAGE_KEY_ADMIN) === 'true';
@@ -293,20 +277,16 @@ async function loadTop3Preview() {
 
   const top3 = data.slice(0, 3);
   const medals = ['🥇', '🥈', '🥉'];
-  const contributors = getContributorRSNSet();
 
   // Tile inner preview
   if (top3TilePreview) {
-    top3TilePreview.innerHTML = top3.map((p, i) => {
-      const isContributor = contributors.has(p.name.toLowerCase());
-      return `
+    top3TilePreview.innerHTML = top3.map((p, i) => `
         <div class="top3-tile-card">
           <span class="rank">${medals[i]}</span>
-          <span class="name">${escapeHtml(p.name)}${isContributor ? ' <span class="contributor-icon" title="Prize Fund Contributor" aria-label="Prize Fund Contributor">💰</span>' : ''}</span>
+          <span class="name">${escapeHtml(p.name)}</span>
           <span class="pts">${p.points.toLocaleString()}</span>
         </div>
-      `;
-    }).join('');
+      `).join('');
   }
 }
 
@@ -315,28 +295,15 @@ function buildLeaderboardTable(data) {
     return '<p class="no-entries">No leaderboard data available. Try the Wise Old Man link below.</p>';
   }
   const medals = { 1: '🥇', 2: '🥈', 3: '🥉' };
-  const contributors = getContributorRSNSet();
-  const rows = data.map(p => {
-    const isContributor = contributors.has(p.name.toLowerCase());
-    const nameCell = escapeHtml(p.name) + (isContributor
-      ? ' <span class="contributor-icon" title="Prize Fund Contributor" aria-label="Prize Fund Contributor">💰</span>'
-      : '');
-    return `
+  const rows = data.map(p => `
       <tr>
         <td>${medals[p.rank] ? `<span class="rank-medal">${medals[p.rank]}</span>` : `#${p.rank}`}</td>
-        <td>${nameCell}</td>
+        <td>${escapeHtml(p.name)}</td>
         <td>${p.points.toLocaleString()}</td>
       </tr>
-    `;
-  }).join('');
-
-  const total = getApprovedPrizeFundTotal();
-  const fundBanner = total > 0
-    ? `<div class="lb-fund-banner">💰 Clan Prize Fund: <strong>${total.toLocaleString()} GP</strong> &nbsp;·&nbsp; <span class="lb-fund-note">💰 = contributor</span></div>`
-    : '';
+    `).join('');
 
   return `
-    ${fundBanner}
     <table class="lb-table">
       <thead><tr><th>Rank</th><th>Player</th><th>Points</th></tr></thead>
       <tbody>${rows}</tbody>
@@ -395,45 +362,26 @@ function renderPrizeFundTilePreview() {
   const el = document.getElementById('prize-fund-tile-preview');
   if (!el) return;
   const total = getApprovedPrizeFundTotal();
-  const contributors = getApprovedContributors();
-  el.innerHTML = `
-    <span class="fund-total-label">💰 ${total.toLocaleString()} GP verified</span>
-    ${contributors.length > 0
-      ? `<span class="fund-contributors-count">${contributors.length} contributor${contributors.length !== 1 ? 's' : ''}</span>`
-      : ''}
-  `;
+  el.innerHTML = `<span class="fund-total-label">💰 ${total.toLocaleString()} GP verified</span>`;
 }
 
 function renderPrizeFundModal() {
   const totalEl = document.getElementById('prize-fund-modal-total');
-  const listEl  = document.getElementById('prize-fund-contributors-list');
-  if (!totalEl || !listEl) return;
+  if (!totalEl) return;
 
   const total = getApprovedPrizeFundTotal();
-  const contributors = getApprovedContributors();
   const pendingCount = getPrizePledges().filter(p => p.status === 'pending').length;
 
   totalEl.textContent = `${total.toLocaleString()} GP`;
 
-  if (contributors.length === 0) {
-    listEl.innerHTML = '<p class="no-entries">No verified contributors yet. Be the first!</p>';
-  } else {
-    listEl.innerHTML = `
-      <h4 class="contributors-heading">Verified Contributors</h4>
-      <ul class="contributors-list">
-        ${contributors.map(c => `
-          <li class="contributor-item">
-            <span class="contributor-icon">💰</span>
-            <span class="contributor-name">${escapeHtml(c.rsn)}</span>
-            <span class="contributor-amount">${c.total.toLocaleString()} GP</span>
-          </li>
-        `).join('')}
-      </ul>
-    `;
-  }
-
-  if (pendingCount > 0) {
-    listEl.innerHTML += `<p class="pending-note">⏳ ${pendingCount} pledge${pendingCount !== 1 ? 's' : ''} awaiting admin verification.</p>`;
+  const pendingEl = document.getElementById('prize-fund-pending-note');
+  if (pendingEl) {
+    if (pendingCount > 0) {
+      pendingEl.textContent = `⏳ ${pendingCount} pledge${pendingCount !== 1 ? 's' : ''} awaiting admin verification.`;
+      pendingEl.classList.remove('hidden');
+    } else {
+      pendingEl.classList.add('hidden');
+    }
   }
 }
 
