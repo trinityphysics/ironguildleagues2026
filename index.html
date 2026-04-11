@@ -32,6 +32,13 @@
     <p class="header-tagline">Forge your legacy in the fires of the Demonic Pact</p>
   </header>
 
+  <!-- ===================== COUNTDOWN ===================== -->
+  <div id="countdown-section" class="countdown-section" aria-live="polite" aria-label="Event countdown">
+    <div id="countdown-display" class="countdown-display">
+      <div class="countdown-label">⚔️ Loading countdown…</div>
+    </div>
+  </div>
+
   <!-- ===================== TASK GRID ===================== -->
   <main>
     <h2 class="section-title tasks-title">🏆 Clan Challenges 🏆</h2>
@@ -207,6 +214,15 @@
       </div>
 
       <div class="admin-section">
+        <h4>Event Launch Time</h4>
+        <p style="font-size:0.78rem;color:var(--text-dim);margin-bottom:0.5rem;">Set the exact launch time for the countdown. Defaults to Apr 15 2026 00:00 UTC if not set.</p>
+        <label for="admin-launch-datetime" class="form-label">Launch Date &amp; Time (local time)</label>
+        <input type="datetime-local" id="admin-launch-datetime" class="form-input" />
+        <button id="admin-save-launch-btn" class="btn btn-fire" style="margin-top:0.5rem;">Save Launch Time</button>
+        <p id="admin-launch-msg" class="admin-msg hidden"></p>
+      </div>
+
+      <div class="admin-section">
         <h4>Change Admin Password</h4>
         <label for="admin-new-password" class="form-label">New Password</label>
         <input type="password" id="admin-new-password" class="form-input" placeholder="New password…" autocomplete="new-password" />
@@ -306,6 +322,31 @@
         <p id="pledge-submit-msg" class="admin-msg hidden"></p>
       </div>
     </div>
+  </div>
+
+  <!-- ===================== FLOATING MENU ===================== -->
+  <div id="fab-container" class="fab-container" role="navigation" aria-label="Quick links">
+    <div id="fab-items" class="fab-items" aria-hidden="true">
+      <a href="https://tools.runescape.wiki/demonic-pacts/" target="_blank" rel="noopener noreferrer" class="fab-item" title="Demonic Pacts Build Planner">
+        <span class="fab-item-label">Demonic Pacts</span>
+        <span class="fab-item-icon" aria-hidden="true">⚔️</span>
+      </a>
+      <a href="https://oldschool.runescape.wiki/w/Demonic_Pacts_League" target="_blank" rel="noopener noreferrer" class="fab-item" title="Demonic Pacts League Wiki">
+        <span class="fab-item-label">Wiki</span>
+        <span class="fab-item-icon" aria-hidden="true">📖</span>
+      </a>
+      <button id="dark-mode-btn" class="fab-item" title="Toggle dark mode" type="button">
+        <span class="fab-item-label">Dark Mode</span>
+        <span class="fab-item-icon" id="dark-mode-icon" aria-hidden="true">🌙</span>
+      </button>
+      <a href="https://oldschool.runescape.wiki/w/Demonic_Pacts_League/Tasks" target="_blank" rel="noopener noreferrer" class="fab-item" title="Demonic Pacts League Tasks">
+        <span class="fab-item-label">Tasks</span>
+        <span class="fab-item-icon" aria-hidden="true">📋</span>
+      </a>
+    </div>
+    <button id="fab-trigger" class="fab-trigger" aria-label="Toggle quick links menu" aria-expanded="false" aria-controls="fab-items" type="button">
+      <span class="fab-trigger-icon" id="fab-trigger-icon" aria-hidden="true">☰</span>
+    </button>
   </div>
 
   <script src="app.js"></script>
