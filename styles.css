@@ -908,11 +908,6 @@ main {
   text-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
 }
 
-.fund-contributors-count {
-  font-size: 0.78rem;
-  color: var(--text-muted);
-}
-
 /* ---------- Prize Fund Modal ---------- */
 .prize-fund-box { max-width: 560px; }
 
@@ -942,65 +937,6 @@ main {
   text-transform: uppercase;
   letter-spacing: 0.1em;
   margin-top: 0.3rem;
-}
-
-.contributors-heading {
-  font-family: var(--font-body);
-  font-size: 0.82rem;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  margin-bottom: 0.5rem;
-}
-
-.contributors-list {
-  list-style: none;
-  margin-bottom: 1rem;
-}
-
-.contributor-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.45rem 0.6rem;
-  border-bottom: 1px solid rgba(255, 215, 0, 0.1);
-  font-size: 0.87rem;
-}
-
-.contributor-name {
-  flex: 1;
-  color: var(--fire-gold);
-  font-weight: 600;
-}
-
-.contributor-amount {
-  color: var(--text-muted);
-  font-size: 0.8rem;
-}
-
-/* Inline contributor icon in leaderboard / tile */
-.contributor-icon,
-.contributor-icon-inline {
-  font-size: 0.9em;
-  vertical-align: middle;
-  filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.5));
-}
-
-/* Leaderboard fund banner */
-.lb-fund-banner {
-  background: rgba(255, 200, 0, 0.07);
-  border: 1px solid rgba(255, 215, 0, 0.25);
-  border-radius: var(--radius);
-  padding: 0.55rem 0.85rem;
-  margin-bottom: 0.75rem;
-  font-size: 0.85rem;
-  color: var(--fire-gold);
-  text-align: center;
-}
-
-.lb-fund-note {
-  color: var(--text-muted);
-  font-size: 0.8rem;
 }
 
 .pending-note {
