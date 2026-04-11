@@ -18,9 +18,6 @@ const STORAGE_KEY_CLAIMS  = 'ig_claims_2026';
 const STORAGE_KEY_DRAGONS = 'ig_dragons_2026';
 const STORAGE_KEY_ADMIN   = 'ig_admin_session';
 const STORAGE_KEY_PASSWORD = 'ig_admin_pwd_2026';
-const STORAGE_KEY_PRIZE_FUND = 'ig_prize_fund_2026';
-
-const MAX_PRIZE_GP = 2_147_000_000;
 
 // Default password – can be changed via the admin panel.
 // This is stored hashed (SHA-256) in localStorage after first change.
@@ -155,23 +152,6 @@ function saveDragonMembers(members) {
   localStorage.setItem(STORAGE_KEY_DRAGONS, JSON.stringify(members));
 }
 
-function getPrizePledges() {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY_PRIZE_FUND) || '[]');
-  } catch { return []; }
-}
-
-function savePrizePledges(pledges) {
-  localStorage.setItem(STORAGE_KEY_PRIZE_FUND, JSON.stringify(pledges));
-}
-
-function getApprovedPrizePledges() {
-  return getPrizePledges().filter(p => p.status === 'approved');
-}
-
-function getApprovedPrizeFundTotal() {
-  return getApprovedPrizePledges().reduce((sum, p) => sum + p.amount, 0);
-}
 
 
 function isAdminLoggedIn() {
@@ -354,158 +334,6 @@ function renderDragonTilePreview() {
   }
 }
 
-// ──────────────────────────────────────────────────
-// Prize Fund UI
-// ──────────────────────────────────────────────────
-
-function renderPrizeFundTilePreview() {
-  const el = document.getElementById('prize-fund-tile-preview');
-  if (!el) return;
-  const total = getApprovedPrizeFundTotal();
-  el.innerHTML = `<span class="fund-total-label">💰 ${total.toLocaleString()} GP verified</span>`;
-}
-
-function renderPrizeFundModal() {
-  const totalEl = document.getElementById('prize-fund-modal-total');
-  if (!totalEl) return;
-
-  const total = getApprovedPrizeFundTotal();
-  const pendingCount = getPrizePledges().filter(p => p.status === 'pending').length;
-
-  totalEl.textContent = `${total.toLocaleString()} GP`;
-
-  const pendingEl = document.getElementById('prize-fund-pending-note');
-  if (pendingEl) {
-    if (pendingCount > 0) {
-      pendingEl.textContent = `⏳ ${pendingCount} pledge${pendingCount !== 1 ? 's' : ''} awaiting admin verification.`;
-      pendingEl.classList.remove('hidden');
-    } else {
-      pendingEl.classList.add('hidden');
-    }
-  }
-}
-
-function openPrizeFundModal() {
-  const modal = document.getElementById('prize-fund-modal');
-  renderPrizeFundModal();
-  // Reset form
-  const rsnInput    = document.getElementById('pledge-rsn-input');
-  const amtInput    = document.getElementById('pledge-amount-input');
-  const msgEl       = document.getElementById('pledge-submit-msg');
-  if (rsnInput) rsnInput.value = '';
-  if (amtInput) amtInput.value = '';
-  if (msgEl) { msgEl.classList.add('hidden'); msgEl.textContent = ''; }
-  modal.classList.remove('hidden');
-  document.body.style.overflow = 'hidden';
-}
-
-function closePrizeFundModal() {
-  document.getElementById('prize-fund-modal').classList.add('hidden');
-  document.body.style.overflow = '';
-}
-
-function renderAdminPendingPledges() {
-  const list = document.getElementById('admin-pending-pledges-list');
-  if (!list) return;
-  const pending = getPrizePledges().filter(p => p.status === 'pending');
-  if (pending.length === 0) {
-    list.innerHTML = '<p class="no-entries" style="font-size:0.8rem;">No pending pledges.</p>';
-    return;
-  }
-  list.innerHTML = pending.map((p, i) => `
-    <div class="pending-pledge-item">
-      <span class="pending-pledge-rsn">💰 ${escapeHtml(p.rsn)}</span>
-      <span class="pending-pledge-amount">${p.amount.toLocaleString()} GP</span>
-      <div class="pending-pledge-actions">
-        <button class="btn btn-fire btn-sm pledge-approve-btn" data-rsn="${escapeHtml(p.rsn)}" data-amount="${p.amount}" data-ts="${p.timestamp}">Approve</button>
-        <button class="btn btn-outline btn-sm pledge-reject-btn"  data-rsn="${escapeHtml(p.rsn)}" data-amount="${p.amount}" data-ts="${p.timestamp}">Reject</button>
-      </div>
-    </div>
-  `).join('');
-
-  list.querySelectorAll('.pledge-approve-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const { rsn, amount, ts } = btn.dataset;
-      const pledges = getPrizePledges();
-      const idx = pledges.findIndex(p =>
-        p.rsn.toLowerCase() === rsn.toLowerCase() &&
-        p.amount === Number(amount) &&
-        String(p.timestamp) === ts
-      );
-      if (idx !== -1) {
-        pledges[idx].status = 'approved';
-        savePrizePledges(pledges);
-        renderAdminPendingPledges();
-        renderPrizeFundTilePreview();
-        loadTop3Preview();
-        showAdminMsg('pledge', `Approved pledge of ${Number(amount).toLocaleString()} GP from ${rsn}.`);
-      }
-    });
-  });
-
-  list.querySelectorAll('.pledge-reject-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const { rsn, amount, ts } = btn.dataset;
-      const pledges = getPrizePledges();
-      const idx = pledges.findIndex(p =>
-        p.rsn.toLowerCase() === rsn.toLowerCase() &&
-        p.amount === Number(amount) &&
-        String(p.timestamp) === ts
-      );
-      if (idx !== -1) {
-        pledges.splice(idx, 1);
-        savePrizePledges(pledges);
-        renderAdminPendingPledges();
-        showAdminMsg('pledge', `Rejected pledge from ${rsn}.`);
-      }
-    });
-  });
-}
-
-function wirePrizeFundModal() {
-  document.getElementById('prize-pledge-form')?.addEventListener('submit', e => e.preventDefault());
-
-  document.getElementById('pledge-submit-btn')?.addEventListener('click', () => {
-    const rsnInput = document.getElementById('pledge-rsn-input');
-    const amtInput = document.getElementById('pledge-amount-input');
-    const msgEl    = document.getElementById('pledge-submit-msg');
-
-    const rsn    = rsnInput?.value.trim();
-    const amount = parseInt(amtInput?.value, 10);
-
-    if (!rsn) {
-      if (msgEl) { msgEl.textContent = 'Please enter your RSN.'; msgEl.className = 'admin-msg error'; msgEl.classList.remove('hidden'); }
-      return;
-    }
-    if (rsn.length > 12) {
-      if (msgEl) { msgEl.textContent = 'RSN must be 12 characters or fewer.'; msgEl.className = 'admin-msg error'; msgEl.classList.remove('hidden'); }
-      return;
-    }
-    if (!amount || amount < 1) {
-      if (msgEl) { msgEl.textContent = 'Please enter a valid GP amount (minimum 1 GP).'; msgEl.className = 'admin-msg error'; msgEl.classList.remove('hidden'); }
-      return;
-    }
-    if (amount > MAX_PRIZE_GP) {
-      if (msgEl) { msgEl.textContent = `Amount cannot exceed ${MAX_PRIZE_GP.toLocaleString()} GP.`; msgEl.className = 'admin-msg error'; msgEl.classList.remove('hidden'); }
-      return;
-    }
-
-    const pledges = getPrizePledges();
-    pledges.push({ rsn, amount, status: 'pending', timestamp: Date.now() });
-    savePrizePledges(pledges);
-
-    if (rsnInput) rsnInput.value = '';
-    if (amtInput) amtInput.value = '';
-    if (msgEl) {
-      msgEl.textContent = `✅ Pledge submitted! An admin will verify it shortly.`;
-      msgEl.className = 'admin-msg';
-      msgEl.classList.remove('hidden');
-    }
-    renderPrizeFundModal();
-    renderAdminPendingPledges();
-  });
-}
-
 function renderDragonMembersAdmin() {
   const members = getDragonMembers();
   const list    = document.getElementById('dragon-members-list');
@@ -647,7 +475,6 @@ function showAdminPanel() {
   panel.classList.remove('hidden');
   document.getElementById('admin-toggle-btn').classList.add('active');
   renderDragonMembersAdmin();
-  renderAdminPendingPledges();
 }
 
 function hideAdminPanel() {
@@ -714,7 +541,7 @@ function addOverlayClose(overlayId, closeFn) {
 
 document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
-  const modals = ['task-modal', 'leaderboard-modal', 'dragons-modal', 'admin-login-modal', 'prize-fund-modal'];
+  const modals = ['task-modal', 'leaderboard-modal', 'dragons-modal', 'admin-login-modal'];
   for (const id of modals) {
     const el = document.getElementById(id);
     if (el && !el.classList.contains('hidden')) {
@@ -734,7 +561,6 @@ function wireTileClicks() {
       const id = tile.dataset.taskId;
       if (id === 'top3-players')    openLeaderboardModal();
       else if (id === 'here-be-dragons') openDragonsModal();
-      else if (id === 'prize-fund') openPrizeFundModal();
       else if (TASKS[id])           openTaskModal(id);
     };
 
@@ -858,13 +684,11 @@ function wireModalCloseButtons() {
   document.getElementById('lb-modal-close')?.addEventListener('click',         closeLeaderboardModal);
   document.getElementById('dragons-modal-close')?.addEventListener('click',    closeDragonsModal);
   document.getElementById('admin-login-close')?.addEventListener('click',      closeAdminLoginModal);
-  document.getElementById('prize-fund-modal-close')?.addEventListener('click', closePrizeFundModal);
 
   addOverlayClose('task-modal',        closeTaskModal);
   addOverlayClose('leaderboard-modal', closeLeaderboardModal);
   addOverlayClose('dragons-modal',     closeDragonsModal);
   addOverlayClose('admin-login-modal', closeAdminLoginModal);
-  addOverlayClose('prize-fund-modal',  closePrizeFundModal);
 }
 
 // ──────────────────────────────────────────────────
@@ -1127,7 +951,6 @@ async function init() {
   wireAdminLogin();
   wireAdminPanel();
   wireQuickClaim();
-  wirePrizeFundModal();
   wireFAB();
   wireAdminLaunchTime();
 
@@ -1137,7 +960,6 @@ async function init() {
   // Render initial state from localStorage
   renderAllClaims();
   renderDragonTilePreview();
-  renderPrizeFundTilePreview();
 
   // Load WOM leaderboard
   await loadTop3Preview();
