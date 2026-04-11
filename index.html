@@ -132,17 +132,6 @@
         <p class="tile-click-hint">Tap to see all Dragon members</p>
       </article>
 
-      <!-- Tile 9 – Clan Prize Fund -->
-      <article class="task-tile tile-wide tile-prize-fund" data-task-id="prize-fund" tabindex="0" role="button" aria-label="Clan Prize Fund – click to pledge or view contributors">
-        <div class="tile-icon">💰</div>
-        <h3 class="tile-title">Clan Prize Fund</h3>
-        <p class="tile-desc">Members can pledge GP to the clan prize pool. Pledges are verified by an admin before being added to the total.</p>
-        <div id="prize-fund-tile-preview" class="prize-fund-tile-preview">
-          <span class="fund-total-label">Loading…</span>
-        </div>
-        <p class="tile-click-hint">Tap to pledge or view contributors</p>
-      </article>
-
     </div>
   </main>
 
@@ -205,12 +194,6 @@
           <button id="admin-dragon-add-btn" class="btn btn-fire">Add</button>
         </div>
         <p id="admin-dragon-msg" class="admin-msg hidden"></p>
-      </div>
-
-      <div class="admin-section">
-        <h4>Prize Fund – Pending Pledges</h4>
-        <div id="admin-pending-pledges-list" class="pending-pledges-list"></div>
-        <p id="admin-pledge-msg" class="admin-msg hidden"></p>
       </div>
 
       <div class="admin-section">
@@ -292,33 +275,6 @@
         <p class="rewards-label">🎁 Rewards</p>
         <span class="reward-tag">Discord Role</span>
         <span class="reward-tag">Ingame Icon</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===================== PRIZE FUND MODAL ===================== -->
-  <div id="prize-fund-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="prize-fund-modal-title">
-    <div class="modal-box prize-fund-box">
-      <button class="modal-close" id="prize-fund-modal-close" aria-label="Close">&times;</button>
-      <div class="modal-icon">💰</div>
-      <h2 id="prize-fund-modal-title" class="modal-title">Clan Prize Fund</h2>
-      <p class="modal-body">
-        Contribute GP to the clan prize pool! Submit your pledge below — an admin will verify it before it counts toward the total.
-      </p>
-      <div class="prize-fund-total-box" id="prize-fund-total-box">
-        <span class="fund-total-big" id="prize-fund-modal-total">0 GP</span>
-        <span class="fund-total-sublabel">Total Verified Fund</span>
-      </div>
-      <p id="prize-fund-pending-note" class="pending-note hidden"></p>
-
-      <div class="prize-pledge-form" id="prize-pledge-form">
-        <h4 class="pledge-form-title">Submit a Pledge</h4>
-        <label for="pledge-rsn-input" class="form-label">Your RSN</label>
-        <input type="text" id="pledge-rsn-input" class="form-input" placeholder="Your in-game name…" maxlength="12" autocomplete="off" />
-        <label for="pledge-amount-input" class="form-label">Amount (GP)</label>
-        <input type="number" id="pledge-amount-input" class="form-input" placeholder="e.g. 1000000" min="1" max="2147000000" />
-        <button id="pledge-submit-btn" class="btn btn-fire" style="margin-top:0.75rem;">Submit Pledge</button>
-        <p id="pledge-submit-msg" class="admin-msg hidden"></p>
       </div>
     </div>
   </div>
