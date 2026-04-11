@@ -969,6 +969,195 @@ function scheduleWOMRefresh() {
   }, 5 * 60 * 1000);
 }
 
+const STORAGE_KEY_LAUNCH_TIME = 'ig_launch_time_2026';
+const STORAGE_KEY_DARK_MODE   = 'ig_dark_mode_2026';
+
+// Default launch: April 15 2026 00:00 UTC (admin can override)
+const DEFAULT_LAUNCH_DATE = new Date('2026-04-15T00:00:00Z');
+// Fixed event end date
+const EVENT_END_DATE = new Date('2026-06-10T00:00:00Z');
+
+// ──────────────────────────────────────────────────
+// Countdown Timer
+// ──────────────────────────────────────────────────
+
+function getLaunchDate() {
+  const stored = localStorage.getItem(STORAGE_KEY_LAUNCH_TIME);
+  if (stored) {
+    const d = new Date(stored);
+    if (!isNaN(d.getTime())) return d;
+  }
+  return DEFAULT_LAUNCH_DATE;
+}
+
+function saveLaunchDate(isoStr) {
+  localStorage.setItem(STORAGE_KEY_LAUNCH_TIME, isoStr);
+}
+
+function formatCountdownParts(ms) {
+  const totalSec = Math.max(0, Math.floor(ms / 1000));
+  const days  = Math.floor(totalSec / 86400);
+  const hours = Math.floor((totalSec % 86400) / 3600);
+  const mins  = Math.floor((totalSec % 3600) / 60);
+  const secs  = totalSec % 60;
+  return { days, hours, mins, secs };
+}
+
+function renderCountdownUnits(parts) {
+  return `
+    <div class="countdown-units">
+      <div class="countdown-unit">
+        <span class="cd-num">${String(parts.days).padStart(2, '0')}</span>
+        <span class="cd-lbl">Days</span>
+      </div>
+      <div class="countdown-unit">
+        <span class="cd-num">${String(parts.hours).padStart(2, '0')}</span>
+        <span class="cd-lbl">Hours</span>
+      </div>
+      <div class="countdown-unit">
+        <span class="cd-num">${String(parts.mins).padStart(2, '0')}</span>
+        <span class="cd-lbl">Mins</span>
+      </div>
+      <div class="countdown-unit">
+        <span class="cd-num">${String(parts.secs).padStart(2, '0')}</span>
+        <span class="cd-lbl">Secs</span>
+      </div>
+    </div>
+  `;
+}
+
+function updateCountdown() {
+  const el = document.getElementById('countdown-display');
+  if (!el) return;
+
+  const now    = Date.now();
+  const launch = getLaunchDate().getTime();
+  const end    = EVENT_END_DATE.getTime();
+
+  if (now < launch) {
+    const parts = formatCountdownParts(launch - now);
+    el.innerHTML = `<div class="countdown-label">⚔️ Leagues Launches In</div>${renderCountdownUnits(parts)}`;
+  } else if (now < end) {
+    const parts = formatCountdownParts(end - now);
+    el.innerHTML = `<div class="countdown-label">🔥 Leagues Ends In</div>${renderCountdownUnits(parts)}`;
+  } else {
+    el.innerHTML = `<div class="countdown-ended">🏆 The Demonic Pact Leagues has ended. Well fought, IronGuild!</div>`;
+  }
+}
+
+function startCountdown() {
+  updateCountdown();
+  setInterval(updateCountdown, 1000);
+}
+
+// ──────────────────────────────────────────────────
+// Dark Mode
+// ──────────────────────────────────────────────────
+
+function isDarkMode() {
+  return localStorage.getItem(STORAGE_KEY_DARK_MODE) === 'true';
+}
+
+function applyDarkMode(enabled) {
+  document.body.classList.toggle('dark-mode', enabled);
+  localStorage.setItem(STORAGE_KEY_DARK_MODE, enabled ? 'true' : 'false');
+  const icon  = document.getElementById('dark-mode-icon');
+  const btn   = document.getElementById('dark-mode-btn');
+  if (icon) icon.textContent = enabled ? '☀️' : '🌙';
+  if (btn)  btn.classList.toggle('active', enabled);
+}
+
+// ──────────────────────────────────────────────────
+// Floating Menu (FAB)
+// ──────────────────────────────────────────────────
+
+function wireFAB() {
+  const trigger = document.getElementById('fab-trigger');
+  const items   = document.getElementById('fab-items');
+  if (!trigger || !items) return;
+
+  function openMenu() {
+    items.classList.add('open');
+    items.setAttribute('aria-hidden', 'false');
+    trigger.classList.add('open');
+    trigger.setAttribute('aria-expanded', 'true');
+  }
+
+  function closeMenu() {
+    items.classList.remove('open');
+    items.setAttribute('aria-hidden', 'true');
+    trigger.classList.remove('open');
+    trigger.setAttribute('aria-expanded', 'false');
+  }
+
+  function toggleMenu() {
+    if (items.classList.contains('open')) closeMenu(); else openMenu();
+  }
+
+  trigger.addEventListener('click', e => {
+    e.stopPropagation();
+    toggleMenu();
+  });
+
+  // Close when clicking outside
+  document.addEventListener('click', e => {
+    if (!document.getElementById('fab-container')?.contains(e.target)) closeMenu();
+  });
+
+  // Dark mode button
+  document.getElementById('dark-mode-btn')?.addEventListener('click', () => {
+    applyDarkMode(!isDarkMode());
+  });
+
+  // Close FAB when a link is clicked
+  items.querySelectorAll('a').forEach(a => {
+    a.addEventListener('click', () => closeMenu());
+  });
+
+  // Escape key closes FAB
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeMenu();
+  });
+}
+
+// ──────────────────────────────────────────────────
+// Wire Admin Launch Time
+// ──────────────────────────────────────────────────
+
+function wireAdminLaunchTime() {
+  const input = document.getElementById('admin-launch-datetime');
+  const btn   = document.getElementById('admin-save-launch-btn');
+  if (!input || !btn) return;
+
+  // Populate input with current stored value (convert UTC → local for datetime-local input)
+  const stored = localStorage.getItem(STORAGE_KEY_LAUNCH_TIME);
+  if (stored) {
+    const d = new Date(stored);
+    if (!isNaN(d.getTime())) {
+      // datetime-local requires local time in YYYY-MM-DDTHH:MM format
+      const localISO = new Date(d.getTime() - d.getTimezoneOffset() * 60000)
+        .toISOString().slice(0, 16);
+      input.value = localISO;
+    }
+  }
+
+  btn.addEventListener('click', () => {
+    const val = input.value;
+    if (!val) {
+      showAdminMsg('launch', 'Please enter a date and time.', true);
+      return;
+    }
+    const d = new Date(val);
+    if (isNaN(d.getTime())) {
+      showAdminMsg('launch', 'Invalid date/time.', true);
+      return;
+    }
+    saveLaunchDate(d.toISOString());
+    updateCountdown();
+    showAdminMsg('launch', `Launch time set to ${d.toLocaleString()}.`);
+  });
+}
+
 // ──────────────────────────────────────────────────
 // Initialise
 // ──────────────────────────────────────────────────
@@ -976,6 +1165,9 @@ function scheduleWOMRefresh() {
 async function init() {
   // Ensure password hash is initialised
   await getStoredPasswordHash();
+
+  // Apply saved dark mode preference immediately
+  applyDarkMode(isDarkMode());
 
   // Spawn visual ember effects
   spawnEmbers();
@@ -988,6 +1180,11 @@ async function init() {
   wireAdminPanel();
   wireQuickClaim();
   wirePrizeFundModal();
+  wireFAB();
+  wireAdminLaunchTime();
+
+  // Start countdown
+  startCountdown();
 
   // Render initial state from localStorage
   renderAllClaims();
