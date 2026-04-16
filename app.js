@@ -257,27 +257,25 @@ async function fetchWOMLeaderboard() {
     const headers = splitCsvLine(lines[0]).map(h => h.toLowerCase().replace(/\s+/g, '_'));
     const rankIdx   = headers.findIndex(h => h === 'rank');
     const nameIdx   = headers.findIndex(h => h === 'username' || h === 'player' || h === 'display_name' || h === 'displayname');
-    // League points are in the first column ("League Points") before the rank column.
-    // After normalisation "League Points" becomes "league_points" which matches the list.
-    // If no matching header is found we fall back to column 0, which is the league points
-    // column in the WOM group CSV format.
-    let pointsIdx = headers.findIndex(h => h === 'points' || h === 'league_points' || h === 'total_points' || h === 'experience' || h === 'score');
-    if (pointsIdx < 0) pointsIdx = 0;
+    // Level is in the hiscores CSV as a "level" column (WOM group hiscores format).
+    // Fall back to other common column names, then to column 0 if none are found.
+    let levelIdx = headers.findIndex(h => h === 'level' || h === 'points' || h === 'league_points' || h === 'total_points' || h === 'experience' || h === 'score');
+    if (levelIdx < 0) levelIdx = 0;
 
     cachedLeaderboard = lines.slice(1).map((line, idx) => {
-      const cols   = splitCsvLine(line);
-      const rank   = rankIdx   >= 0 ? (parseInt(cols[rankIdx],   10) || idx + 1) : idx + 1;
-      const name   = nameIdx   >= 0 ? (cols[nameIdx]   || 'Unknown') : 'Unknown';
-      const points = parseInt(cols[pointsIdx], 10) || 0;
-      return { rank, name, points, _cols: cols };
+      const cols  = splitCsvLine(line);
+      const rank  = rankIdx  >= 0 ? (parseInt(cols[rankIdx],  10) || idx + 1) : idx + 1;
+      const name  = nameIdx  >= 0 ? (cols[nameIdx]  || 'Unknown') : 'Unknown';
+      const level = parseInt(cols[levelIdx], 10) || 0;
+      return { rank, name, level, _cols: cols };
     }).filter(e => {
       // Exclude any player whose row contains an "Unknown" value in any column.
       if (e._cols.some(c => c.toLowerCase() === 'unknown')) return false;
       if (!e.name || e.name === 'Unknown') return false;
-      // Exclude players with 0 league points.
-      return e.points > 0;
+      // Exclude players with 0 level.
+      return e.level > 0;
     }).map(e => { delete e._cols; return e; })
-      .sort((a, b) => b.points - a.points)
+      .sort((a, b) => b.level - a.level)
       .map((e, i) => ({ ...e, rank: i + 1 }));
 
     return cachedLeaderboard;
@@ -307,7 +305,7 @@ async function loadTop3Preview() {
         <div class="top3-tile-card">
           <span class="rank">${medals[i]}</span>
           <span class="name">${escapeHtml(p.name)}</span>
-          <span class="pts">${p.points.toLocaleString()}</span>
+          <span class="pts">${p.level.toLocaleString()}</span>
         </div>
       `).join('');
   }
@@ -322,13 +320,13 @@ function buildLeaderboardTable(data) {
       <tr>
         <td>${medals[p.rank] ? `<span class="rank-medal">${medals[p.rank]}</span>` : `#${p.rank}`}</td>
         <td>${escapeHtml(p.name)}</td>
-        <td>${p.points.toLocaleString()}</td>
+        <td>${p.level.toLocaleString()}</td>
       </tr>
     `).join('');
 
   return `
     <table class="lb-table">
-      <thead><tr><th>Rank</th><th>Player</th><th>Points</th></tr></thead>
+      <thead><tr><th>Rank</th><th>Player</th><th>Level</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>`;
 }
