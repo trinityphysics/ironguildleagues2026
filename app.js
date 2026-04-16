@@ -10,7 +10,7 @@
 // ──────────────────────────────────────────────────
 
 const WOM_GROUP_ID   = 239;
-const WOM_CSV_URL    = `https://api.wiseoldman.net/league/groups/${WOM_GROUP_ID}/csv`;
+const WOM_API_URL    = `https://league.wiseoldman.net/groups/${WOM_GROUP_ID}/hiscores`;
 
 const STORAGE_KEY_CLAIMS  = 'ig_claims_2026';
 const STORAGE_KEY_DRAGONS = 'ig_dragons_2026';
@@ -223,59 +223,27 @@ let cachedLeaderboard = null;
 
 async function fetchWOMLeaderboard() {
   try {
-    const res = await fetch(WOM_CSV_URL);
+    const res = await fetch(WOM_API_URL, { headers: { 'Accept': 'application/json' } });
     if (!res.ok) throw new Error(`WOM API ${res.status}`);
-    const text = await res.text();
+    const json = await res.json();
 
-    // Parse CSV – first row is headers, remaining rows are data.
-    // Expected columns (case-insensitive): rank, username/player, points/league_points
-    const lines = text.trim().split('\n').filter(l => l.trim() !== '');
-    if (lines.length < 2) return null;
+    // WOM hiscores response: array of { player: { displayName }, data: { rank, level, experience } }
+    // Also handle flat format: { username/displayName, level, rank }
+    const entries = Array.isArray(json) ? json : (json.data || json.members || []);
+    if (!entries.length) return null;
 
-    // Split a CSV line respecting double-quoted fields (RFC 4180).
-    function splitCsvLine(line) {
-      const result = [];
-      let cur = '', inQuote = false;
-      for (let i = 0; i < line.length; i++) {
-        const ch = line[i];
-        if (inQuote) {
-          if (ch === '"' && line[i + 1] === '"') { cur += '"'; i++; }
-          else if (ch === '"') inQuote = false;
-          else cur += ch;
-        } else {
-          if (ch === '"') inQuote = true;
-          else if (ch === ',') { result.push(cur.trim()); cur = ''; }
-          else cur += ch;
-        }
-      }
-      result.push(cur.trim());
-      return result;
-    }
-
-    // Normalise headers: lowercase + collapse spaces to underscores so both
-    // "league_points" and "League Points" map to the same token.
-    const headers = splitCsvLine(lines[0]).map(h => h.toLowerCase().replace(/\s+/g, '_'));
-    const rankIdx   = headers.findIndex(h => h === 'rank');
-    const nameIdx   = headers.findIndex(h => h === 'username' || h === 'player' || h === 'display_name' || h === 'displayname');
-    // Level is in the hiscores CSV as a "level" column (WOM group hiscores format).
-    // Fall back to other common column names, then to column 0 if none are found.
-    let levelIdx = headers.findIndex(h => h === 'level' || h === 'points' || h === 'league_points' || h === 'total_points' || h === 'experience' || h === 'score');
-    if (levelIdx < 0) levelIdx = 0;
-
-    cachedLeaderboard = lines.slice(1).map((line, idx) => {
-      const cols  = splitCsvLine(line);
-      const rank  = rankIdx  >= 0 ? (parseInt(cols[rankIdx],  10) || idx + 1) : idx + 1;
-      const name  = nameIdx  >= 0 ? (cols[nameIdx]  || 'Unknown') : 'Unknown';
-      const level = parseInt(cols[levelIdx], 10) || 0;
-      return { rank, name, level, _cols: cols };
+    cachedLeaderboard = entries.map((entry, idx) => {
+      const name  = entry.player?.displayName || entry.player?.username ||
+                    entry.displayName || entry.username || entry.display_name || 'Unknown';
+      const level = entry.data?.level ?? entry.data?.experience ??
+                    entry.level ?? entry.experience ?? entry.points ?? 0;
+      const rank  = entry.data?.rank ?? entry.rank ?? idx + 1;
+      return { rank, name, level };
     }).filter(e => {
-      // Exclude any player whose row contains an "Unknown" value in any column.
-      if (e._cols.some(c => c.toLowerCase() === 'unknown')) return false;
       if (!e.name || e.name === 'Unknown') return false;
       // Exclude players with 0 level.
       return e.level > 0;
-    }).map(e => { delete e._cols; return e; })
-      .sort((a, b) => b.level - a.level)
+    }).sort((a, b) => b.level - a.level)
       .map((e, i) => ({ ...e, rank: i + 1 }));
 
     return cachedLeaderboard;
