@@ -262,8 +262,14 @@ async function fetchWOMLeaderboard() {
       const rank   = rankIdx   >= 0 ? (parseInt(cols[rankIdx],   10) || idx + 1) : idx + 1;
       const name   = nameIdx   >= 0 ? (cols[nameIdx]   || 'Unknown') : 'Unknown';
       const points = pointsIdx >= 0 ? (parseInt(cols[pointsIdx], 10) || 0)       : 0;
-      return { rank, name, points };
-    }).filter(e => (e.name && e.name !== 'Unknown') || e.points > 0);
+      return { rank, name, points, _cols: cols };
+    }).filter(e => {
+      // Exclude any player whose row contains an "Unknown" value in any column.
+      if (e._cols.some(c => c.toLowerCase() === 'unknown')) return false;
+      return e.name && e.name !== 'Unknown';
+    }).map(e => { delete e._cols; return e; })
+      .sort((a, b) => b.points - a.points)
+      .map((e, i) => ({ ...e, rank: i + 1 }));
 
     return cachedLeaderboard;
   } catch (err) {
