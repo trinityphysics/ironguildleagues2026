@@ -229,12 +229,13 @@ async function fetchWOMLeaderboard() {
 
     // WOM hiscores response: array of { player: { displayName }, data: { rank, level, experience } }
     // Also handle flat format: { username/displayName, level, rank }
-    const entries = Array.isArray(json) ? json : (json.data || json.members || []);
+    const entries = Array.isArray(json) ? json : (json.data || []);
     if (!entries.length) return null;
 
     cachedLeaderboard = entries.map((entry, idx) => {
       const name  = entry.player?.displayName || entry.player?.username ||
                     entry.displayName || entry.username || entry.display_name || 'Unknown';
+      // level holds total level; experience/points are accepted as substitutes when level is absent.
       const level = entry.data?.level ?? entry.data?.experience ??
                     entry.level ?? entry.experience ?? entry.points ?? 0;
       const rank  = entry.data?.rank ?? entry.rank ?? idx + 1;
