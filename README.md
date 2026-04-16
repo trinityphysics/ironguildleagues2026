@@ -6,7 +6,7 @@ A static single-page web app for the **IronGuild OSRS clan** to interact with th
 
 - 🔥 **Fiery OSRS-themed UI** – dark demonic aesthetic with animated ember particles, glowing tiles, and fire colour gradients
 - 🏆 **Task Tiles** – clickable/tappable challenge cards each showing a brief description up front, expanding to a full detail modal on click (rewards, in-depth description, claim status)
-- 📊 **Live Leaderboard** – auto-fetches the top 3 IronGuild players from [Wise Old Man](https://wiseoldman.net/groups/5475) (group ID 5475, refreshes every 5 minutes) and displays a full sorted leaderboard on click
+- 📊 **Live Leaderboard** – auto-fetches the top 3 IronGuild players from [Wise Old Man](https://wiseoldman.net/groups/239) (group ID 239, refreshes every 5 minutes) and displays a full sorted leaderboard on click
 - 🐉 **Here Be Dragons** – manually maintained list of members who have achieved Dragon Status; displayed in a dedicated modal
 - 📱 **Mobile Responsive** – grid layout adapts from 2-column desktop down to single-column mobile
 - 🔐 **Admin Panel** – password-protected panel (default password: `IronGuild2026!`) to:

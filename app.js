@@ -9,10 +9,8 @@
 // Constants
 // ──────────────────────────────────────────────────
 
-const WOM_GROUP_ID   = 5475;
-const WOM_BASE       = 'https://api.wiseoldman.net/v2';
-// Leagues points metric (WOM uses 'league_points' for current leagues event)
-const WOM_METRIC     = 'league_points';
+const WOM_GROUP_ID   = 239;
+const WOM_CSV_URL    = `https://api.wiseoldman.net/league/groups/${WOM_GROUP_ID}/csv`;
 
 const STORAGE_KEY_CLAIMS  = 'ig_claims_2026';
 const STORAGE_KEY_DRAGONS = 'ig_dragons_2026';
@@ -225,18 +223,48 @@ let cachedLeaderboard = null;
 
 async function fetchWOMLeaderboard() {
   try {
-    const res  = await fetch(
-      `${WOM_BASE}/groups/${WOM_GROUP_ID}/hiscores?metric=${WOM_METRIC}&limit=50`,
-      { headers: { 'Accept': 'application/json' } }
-    );
+    const res = await fetch(WOM_CSV_URL);
     if (!res.ok) throw new Error(`WOM API ${res.status}`);
-    const data = await res.json();
-    // WOM hiscores response: array of { player: { displayName }, data: { rank, level, experience } }
-    cachedLeaderboard = (data || []).map((entry, idx) => ({
-      rank:  idx + 1,
-      name:  entry.player?.displayName || 'Unknown',
-      points: entry.data?.experience ?? entry.data?.level ?? 0,
-    }));
+    const text = await res.text();
+
+    // Parse CSV – first row is headers, remaining rows are data.
+    // Expected columns (case-insensitive): rank, username/player, points/league_points
+    const lines = text.trim().split('\n').filter(l => l.trim() !== '');
+    if (lines.length < 2) return null;
+
+    // Split a CSV line respecting double-quoted fields (RFC 4180).
+    function splitCsvLine(line) {
+      const result = [];
+      let cur = '', inQuote = false;
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (inQuote) {
+          if (ch === '"' && line[i + 1] === '"') { cur += '"'; i++; }
+          else if (ch === '"') inQuote = false;
+          else cur += ch;
+        } else {
+          if (ch === '"') inQuote = true;
+          else if (ch === ',') { result.push(cur.trim()); cur = ''; }
+          else cur += ch;
+        }
+      }
+      result.push(cur.trim());
+      return result;
+    }
+
+    const headers = splitCsvLine(lines[0]).map(h => h.toLowerCase());
+    const rankIdx   = headers.findIndex(h => h === 'rank');
+    const nameIdx   = headers.findIndex(h => h === 'username' || h === 'player' || h === 'display_name' || h === 'displayname');
+    const pointsIdx = headers.findIndex(h => h === 'points' || h === 'league_points' || h === 'total_points' || h === 'experience' || h === 'score');
+
+    cachedLeaderboard = lines.slice(1).map((line, idx) => {
+      const cols   = splitCsvLine(line);
+      const rank   = rankIdx   >= 0 ? (parseInt(cols[rankIdx],   10) || idx + 1) : idx + 1;
+      const name   = nameIdx   >= 0 ? (cols[nameIdx]   || 'Unknown') : 'Unknown';
+      const points = pointsIdx >= 0 ? (parseInt(cols[pointsIdx], 10) || 0)       : 0;
+      return { rank, name, points };
+    }).filter(e => (e.name && e.name !== 'Unknown') || e.points > 0);
+
     return cachedLeaderboard;
   } catch (err) {
     console.warn('WOM API error:', err.message);
