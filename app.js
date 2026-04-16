@@ -252,21 +252,30 @@ async function fetchWOMLeaderboard() {
       return result;
     }
 
-    const headers = splitCsvLine(lines[0]).map(h => h.toLowerCase());
+    // Normalise headers: lowercase + collapse spaces to underscores so both
+    // "league_points" and "League Points" map to the same token.
+    const headers = splitCsvLine(lines[0]).map(h => h.toLowerCase().replace(/\s+/g, '_'));
     const rankIdx   = headers.findIndex(h => h === 'rank');
     const nameIdx   = headers.findIndex(h => h === 'username' || h === 'player' || h === 'display_name' || h === 'displayname');
-    const pointsIdx = headers.findIndex(h => h === 'points' || h === 'league_points' || h === 'total_points' || h === 'experience' || h === 'score');
+    // League points are in the first column ("League Points") before the rank column.
+    // After normalisation "League Points" becomes "league_points" which matches the list.
+    // If no matching header is found we fall back to column 0, which is the league points
+    // column in the WOM group CSV format.
+    let pointsIdx = headers.findIndex(h => h === 'points' || h === 'league_points' || h === 'total_points' || h === 'experience' || h === 'score');
+    if (pointsIdx < 0) pointsIdx = 0;
 
     cachedLeaderboard = lines.slice(1).map((line, idx) => {
       const cols   = splitCsvLine(line);
       const rank   = rankIdx   >= 0 ? (parseInt(cols[rankIdx],   10) || idx + 1) : idx + 1;
       const name   = nameIdx   >= 0 ? (cols[nameIdx]   || 'Unknown') : 'Unknown';
-      const points = pointsIdx >= 0 ? (parseInt(cols[pointsIdx], 10) || 0)       : 0;
+      const points = parseInt(cols[pointsIdx], 10) || 0;
       return { rank, name, points, _cols: cols };
     }).filter(e => {
       // Exclude any player whose row contains an "Unknown" value in any column.
       if (e._cols.some(c => c.toLowerCase() === 'unknown')) return false;
-      return e.name && e.name !== 'Unknown';
+      if (!e.name || e.name === 'Unknown') return false;
+      // Exclude players with 0 league points.
+      return e.points > 0;
     }).map(e => { delete e._cols; return e; })
       .sort((a, b) => b.points - a.points)
       .map((e, i) => ({ ...e, rank: i + 1 }));
