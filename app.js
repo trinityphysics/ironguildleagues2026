@@ -16,7 +16,7 @@ const STORAGE_KEY_CLAIMS  = 'ig_claims_2026';
 const STORAGE_KEY_DRAGONS = 'ig_dragons_2026';
 const STORAGE_KEY_ADMIN   = 'ig_admin_session';
 const STORAGE_KEY_PASSWORD = 'ig_admin_pwd_2026';
-const SHARED_CLAIMS_ENDPOINT = window.IG_SHARED_CLAIMS_ENDPOINT || '';
+const SHARED_CLAIMS_ENDPOINT_RAW = window.IG_SHARED_CLAIMS_ENDPOINT || '';
 const CLAIMS_SYNC_INTERVAL_MS = 10_000;
 
 // Default password – can be changed via the admin panel.
@@ -147,7 +147,18 @@ function loadClaimsLocal() {
 }
 
 function hasSharedClaimsEndpoint() {
-  return typeof SHARED_CLAIMS_ENDPOINT === 'string' && SHARED_CLAIMS_ENDPOINT.trim().length > 0;
+  return !!getSharedClaimsEndpoint();
+}
+
+function getSharedClaimsEndpoint() {
+  if (typeof SHARED_CLAIMS_ENDPOINT_RAW !== 'string' || !SHARED_CLAIMS_ENDPOINT_RAW.trim()) return '';
+  try {
+    const parsed = new URL(SHARED_CLAIMS_ENDPOINT_RAW);
+    if (!['http:', 'https:'].includes(parsed.protocol)) return '';
+    return parsed.toString();
+  } catch {
+    return '';
+  }
 }
 
 function normalizeClaims(claims) {
@@ -160,19 +171,23 @@ function normalizeClaims(claims) {
 }
 
 async function fetchSharedClaims() {
-  const res = await fetch(SHARED_CLAIMS_ENDPOINT, { method: 'GET', cache: 'no-store' });
-  if (!res.ok) throw new Error(`Shared claims fetch failed: ${res.status}`);
+  const endpoint = getSharedClaimsEndpoint();
+  if (!endpoint) throw new Error('Shared claims endpoint is not configured correctly.');
+  const res = await fetch(endpoint, { method: 'GET', cache: 'no-store' });
+  if (!res.ok) throw new Error(`Shared claims fetch failed: ${res.status} ${res.statusText}`);
   const payload = await res.json();
   return normalizeClaims(payload?.claims ?? payload);
 }
 
 async function pushSharedClaims(claims) {
-  const res = await fetch(SHARED_CLAIMS_ENDPOINT, {
+  const endpoint = getSharedClaimsEndpoint();
+  if (!endpoint) throw new Error('Shared claims endpoint is not configured correctly.');
+  const res = await fetch(endpoint, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ claims }),
   });
-  if (!res.ok) throw new Error(`Shared claims save failed: ${res.status}`);
+  if (!res.ok) throw new Error(`Shared claims save failed: ${res.status} ${res.statusText}`);
 }
 
 let claimsCache = loadClaimsLocal();
@@ -696,7 +711,7 @@ function wireAdminPanel() {
     if (!claimer)  { showAdminMsg('claim', 'Please enter a username.', true); return; }
     const ok = await setClaim(taskId, claimer);
     renderAllClaims();
-    showAdminMsg('claim', ok ? `Marked "${TASKS[taskId]?.title}" as claimed by ${claimer}.` : 'Saved locally, but shared sync failed. It will sync when the connection returns.');
+    showAdminMsg('claim', ok ? `Marked "${TASKS[taskId]?.title}" as claimed by ${claimer}.` : 'Saved locally. Shared sync will retry on the next poll/update.');
   });
 
   // Unclaim button
@@ -705,7 +720,7 @@ function wireAdminPanel() {
     if (!taskId) { showAdminMsg('claim', 'Please select a task.', true); return; }
     const ok = await removeClaim(taskId);
     renderAllClaims();
-    showAdminMsg('claim', ok ? `Claim removed from "${TASKS[taskId]?.title}".` : 'Removed locally, but shared sync failed. It will sync when the connection returns.');
+    showAdminMsg('claim', ok ? `Claim removed from "${TASKS[taskId]?.title}".` : 'Removed locally. Shared sync will retry on the next poll/update.');
   });
 
   // Add dragon member
