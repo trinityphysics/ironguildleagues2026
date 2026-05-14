@@ -189,7 +189,7 @@ async function refreshClaimsFromShared() {
     saveClaimsLocal(remoteClaims);
     return true;
   } catch (err) {
-    console.warn(err.message);
+    console.warn('Failed to refresh shared claims.', err);
     return false;
   }
 }
@@ -203,7 +203,7 @@ async function saveClaims(claims) {
     await pushSharedClaims(normalized);
     return true;
   } catch (err) {
-    console.warn(err.message);
+    console.warn('Failed to push shared claims.', err);
     return false;
   }
 }
@@ -228,10 +228,14 @@ function startClaimsSync() {
   if (!hasSharedClaimsEndpoint()) return;
   if (claimsSyncTimer) clearInterval(claimsSyncTimer);
   claimsSyncTimer = setInterval(async () => {
-    const changed = await refreshClaimsFromShared();
-    if (!changed) return;
-    renderAllClaims();
-    if (currentTaskId) openTaskModal(currentTaskId);
+    try {
+      const changed = await refreshClaimsFromShared();
+      if (!changed) return;
+      renderAllClaims();
+      if (currentTaskId) openTaskModal(currentTaskId);
+    } catch (err) {
+      console.warn('Shared claims polling failed.', err);
+    }
   }, CLAIMS_SYNC_INTERVAL_MS);
 }
 
@@ -692,7 +696,7 @@ function wireAdminPanel() {
     if (!claimer)  { showAdminMsg('claim', 'Please enter a username.', true); return; }
     const ok = await setClaim(taskId, claimer);
     renderAllClaims();
-    showAdminMsg('claim', ok ? `Marked "${TASKS[taskId]?.title}" as claimed by ${claimer}.` : `Saved locally, but shared sync failed.`);
+    showAdminMsg('claim', ok ? `Marked "${TASKS[taskId]?.title}" as claimed by ${claimer}.` : 'Saved locally, but shared sync failed. It will sync when the connection returns.');
   });
 
   // Unclaim button
@@ -701,7 +705,7 @@ function wireAdminPanel() {
     if (!taskId) { showAdminMsg('claim', 'Please select a task.', true); return; }
     const ok = await removeClaim(taskId);
     renderAllClaims();
-    showAdminMsg('claim', ok ? `Claim removed from "${TASKS[taskId]?.title}".` : 'Removed locally, but shared sync failed.');
+    showAdminMsg('claim', ok ? `Claim removed from "${TASKS[taskId]?.title}".` : 'Removed locally, but shared sync failed. It will sync when the connection returns.');
   });
 
   // Add dragon member
