@@ -17,7 +17,9 @@ const STORAGE_KEY_DRAGONS = 'ig_dragons_2026';
 const STORAGE_KEY_ADMIN   = 'ig_admin_session';
 const STORAGE_KEY_PASSWORD = 'ig_admin_pwd_2026';
 const SHARED_CLAIMS_ENDPOINT_RAW = window.IG_SHARED_CLAIMS_ENDPOINT || '';
-const CLAIMS_POLL_INTERVAL_MS = 10_000;
+const CLAIMS_POLL_INTERVAL_MS = Number(window.IG_CLAIMS_POLL_INTERVAL_MS) > 0
+  ? Number(window.IG_CLAIMS_POLL_INTERVAL_MS)
+  : 10_000;
 
 // Default password – can be changed via the admin panel.
 // This is stored hashed (SHA-256) in localStorage after first change.
@@ -780,7 +782,7 @@ function wireQuickClaim() {
     document.getElementById('task-modal-status').textContent = ok
       ? `✅ Claimed by: ${claimer}`
       : '⚠️ Claimed locally only. Shared sync failed.';
-    document.getElementById('task-modal-status').className   = ok ? 'modal-status claimed' : 'modal-status unclaimed';
+    document.getElementById('task-modal-status').className   = 'modal-status claimed';
   });
 
   document.getElementById('quick-unclaim-btn')?.addEventListener('click', async () => {
@@ -791,7 +793,7 @@ function wireQuickClaim() {
       ? '⏳ Unclaimed – up for grabs!'
       : '⚠️ Unclaimed locally only. Shared sync failed.';
     document.getElementById('task-modal-status').className   = 'modal-status unclaimed';
-    if (ok) document.getElementById('quick-claim-input').value = '';
+    document.getElementById('quick-claim-input').value = '';
   });
 }
 
