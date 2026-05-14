@@ -37,7 +37,17 @@ Open `index.html` in any modern browser – no build step or server required.
    - Add/remove Dragon Status members.
    - Change the admin password.
 
-> **Note:** Admin state uses `sessionStorage` (cleared on tab/browser close) and data uses `localStorage` (persists across refreshes). This is a client-side app – data is local to each browser/device. For a shared admin experience, all admins should use the same device/browser, or the page should be hosted with a back-end.
+> **Shared claims setup:**  
+> Claims now support shared storage through a JSON API endpoint.  
+> Set `window.IG_SHARED_CLAIMS_ENDPOINT` before `app.js` loads (for example in `index.html`):
+> ```html
+> <script>window.IG_SHARED_CLAIMS_ENDPOINT = 'https://your-api.example.com/claims';</script>
+> ```
+> The endpoint should:
+> - return either `{ "claims": { ... } }` or `{ ... }` on `GET`
+> - accept `{ "claims": { ... } }` on `PUT`
+>  
+> If no endpoint is configured, the app automatically falls back to per-device `localStorage`.
 
 ## Challenges
 

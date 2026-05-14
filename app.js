@@ -16,6 +16,8 @@ const STORAGE_KEY_CLAIMS  = 'ig_claims_2026';
 const STORAGE_KEY_DRAGONS = 'ig_dragons_2026';
 const STORAGE_KEY_ADMIN   = 'ig_admin_session';
 const STORAGE_KEY_PASSWORD = 'ig_admin_pwd_2026';
+const SHARED_CLAIMS_ENDPOINT = window.IG_SHARED_CLAIMS_ENDPOINT || '';
+const CLAIMS_SYNC_INTERVAL_MS = 10_000;
 
 // Default password – can be changed via the admin panel.
 // This is stored hashed (SHA-256) in localStorage after first change.
@@ -131,13 +133,106 @@ async function verifyPassword(password, stored) {
 // ──────────────────────────────────────────────────
 
 function getClaims() {
+  return { ...claimsCache };
+}
+
+function saveClaimsLocal(claims) {
+  localStorage.setItem(STORAGE_KEY_CLAIMS, JSON.stringify(claims));
+}
+
+function loadClaimsLocal() {
   try {
     return JSON.parse(localStorage.getItem(STORAGE_KEY_CLAIMS) || '{}');
   } catch { return {}; }
 }
 
-function saveClaims(claims) {
-  localStorage.setItem(STORAGE_KEY_CLAIMS, JSON.stringify(claims));
+function hasSharedClaimsEndpoint() {
+  return typeof SHARED_CLAIMS_ENDPOINT === 'string' && SHARED_CLAIMS_ENDPOINT.trim().length > 0;
+}
+
+function normalizeClaims(claims) {
+  if (!claims || typeof claims !== 'object' || Array.isArray(claims)) return {};
+  return Object.fromEntries(
+    Object.entries(claims)
+      .filter(([k, v]) => TASKS[k] && typeof v === 'string' && v.trim())
+      .map(([k, v]) => [k, v.trim()])
+  );
+}
+
+async function fetchSharedClaims() {
+  const res = await fetch(SHARED_CLAIMS_ENDPOINT, { method: 'GET', cache: 'no-store' });
+  if (!res.ok) throw new Error(`Shared claims fetch failed: ${res.status}`);
+  const payload = await res.json();
+  return normalizeClaims(payload?.claims ?? payload);
+}
+
+async function pushSharedClaims(claims) {
+  const res = await fetch(SHARED_CLAIMS_ENDPOINT, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ claims }),
+  });
+  if (!res.ok) throw new Error(`Shared claims save failed: ${res.status}`);
+}
+
+let claimsCache = loadClaimsLocal();
+let claimsSyncTimer = null;
+
+async function refreshClaimsFromShared() {
+  if (!hasSharedClaimsEndpoint()) return false;
+  try {
+    const remoteClaims = await fetchSharedClaims();
+    const current = JSON.stringify(claimsCache);
+    const incoming = JSON.stringify(remoteClaims);
+    if (current === incoming) return false;
+    claimsCache = remoteClaims;
+    saveClaimsLocal(remoteClaims);
+    return true;
+  } catch (err) {
+    console.warn(err.message);
+    return false;
+  }
+}
+
+async function saveClaims(claims) {
+  const normalized = normalizeClaims(claims);
+  claimsCache = normalized;
+  saveClaimsLocal(normalized);
+  if (!hasSharedClaimsEndpoint()) return true;
+  try {
+    await pushSharedClaims(normalized);
+    return true;
+  } catch (err) {
+    console.warn(err.message);
+    return false;
+  }
+}
+
+async function setClaim(taskId, claimer) {
+  if (!taskId || !claimer) return false;
+  await refreshClaimsFromShared();
+  const claims = getClaims();
+  claims[taskId] = claimer;
+  return saveClaims(claims);
+}
+
+async function removeClaim(taskId) {
+  if (!taskId) return false;
+  await refreshClaimsFromShared();
+  const claims = getClaims();
+  delete claims[taskId];
+  return saveClaims(claims);
+}
+
+function startClaimsSync() {
+  if (!hasSharedClaimsEndpoint()) return;
+  if (claimsSyncTimer) clearInterval(claimsSyncTimer);
+  claimsSyncTimer = setInterval(async () => {
+    const changed = await refreshClaimsFromShared();
+    if (!changed) return;
+    renderAllClaims();
+    if (currentTaskId) openTaskModal(currentTaskId);
+  }, CLAIMS_SYNC_INTERVAL_MS);
 }
 
 function getDragonMembers() {
@@ -590,27 +685,23 @@ function wireTileClicks() {
 
 function wireAdminPanel() {
   // Claim button
-  document.getElementById('admin-claim-btn')?.addEventListener('click', () => {
+  document.getElementById('admin-claim-btn')?.addEventListener('click', async () => {
     const taskId  = document.getElementById('admin-task-select').value;
     const claimer = document.getElementById('admin-claimer-input').value.trim();
     if (!taskId)   { showAdminMsg('claim', 'Please select a task.', true); return; }
     if (!claimer)  { showAdminMsg('claim', 'Please enter a username.', true); return; }
-    const claims   = getClaims();
-    claims[taskId] = claimer;
-    saveClaims(claims);
+    const ok = await setClaim(taskId, claimer);
     renderAllClaims();
-    showAdminMsg('claim', `Marked "${TASKS[taskId]?.title}" as claimed by ${claimer}.`);
+    showAdminMsg('claim', ok ? `Marked "${TASKS[taskId]?.title}" as claimed by ${claimer}.` : `Saved locally, but shared sync failed.`);
   });
 
   // Unclaim button
-  document.getElementById('admin-unclaim-btn')?.addEventListener('click', () => {
+  document.getElementById('admin-unclaim-btn')?.addEventListener('click', async () => {
     const taskId = document.getElementById('admin-task-select').value;
     if (!taskId) { showAdminMsg('claim', 'Please select a task.', true); return; }
-    const claims = getClaims();
-    delete claims[taskId];
-    saveClaims(claims);
+    const ok = await removeClaim(taskId);
     renderAllClaims();
-    showAdminMsg('claim', `Claim removed from "${TASKS[taskId]?.title}".`);
+    showAdminMsg('claim', ok ? `Claim removed from "${TASKS[taskId]?.title}".` : 'Removed locally, but shared sync failed.');
   });
 
   // Add dragon member
@@ -659,25 +750,21 @@ function wireAdminPanel() {
 // ──────────────────────────────────────────────────
 
 function wireQuickClaim() {
-  document.getElementById('quick-claim-btn')?.addEventListener('click', () => {
+  document.getElementById('quick-claim-btn')?.addEventListener('click', async () => {
     if (!currentTaskId) return;
     const inp     = document.getElementById('quick-claim-input');
     const claimer = inp.value.trim();
     if (!claimer) return;
-    const claims       = getClaims();
-    claims[currentTaskId] = claimer;
-    saveClaims(claims);
+    await setClaim(currentTaskId, claimer);
     renderAllClaims();
     // Update modal status
     document.getElementById('task-modal-status').textContent = `✅ Claimed by: ${claimer}`;
     document.getElementById('task-modal-status').className   = 'modal-status claimed';
   });
 
-  document.getElementById('quick-unclaim-btn')?.addEventListener('click', () => {
+  document.getElementById('quick-unclaim-btn')?.addEventListener('click', async () => {
     if (!currentTaskId) return;
-    const claims = getClaims();
-    delete claims[currentTaskId];
-    saveClaims(claims);
+    await removeClaim(currentTaskId);
     renderAllClaims();
     document.getElementById('task-modal-status').textContent = '⏳ Unclaimed – up for grabs!';
     document.getElementById('task-modal-status').className   = 'modal-status unclaimed';
@@ -947,6 +1034,8 @@ function wireAdminLaunchTime() {
 async function init() {
   // Ensure password hash is initialised
   await getStoredPasswordHash();
+  await refreshClaimsFromShared();
+  startClaimsSync();
 
   // Apply saved dark mode preference immediately
   applyDarkMode(isDarkMode());
