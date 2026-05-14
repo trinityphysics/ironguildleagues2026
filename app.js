@@ -17,7 +17,7 @@ const STORAGE_KEY_DRAGONS = 'ig_dragons_2026';
 const STORAGE_KEY_ADMIN   = 'ig_admin_session';
 const STORAGE_KEY_PASSWORD = 'ig_admin_pwd_2026';
 const SHARED_CLAIMS_ENDPOINT_RAW = window.IG_SHARED_CLAIMS_ENDPOINT || '';
-const CLAIMS_SYNC_INTERVAL_MS = 10_000;
+const CLAIMS_POLL_INTERVAL_MS = 10_000;
 
 // Default password – can be changed via the admin panel.
 // This is stored hashed (SHA-256) in localStorage after first change.
@@ -251,7 +251,7 @@ function startClaimsSync() {
     } catch (err) {
       console.warn('Shared claims polling failed.', err);
     }
-  }, CLAIMS_SYNC_INTERVAL_MS);
+  }, CLAIMS_POLL_INTERVAL_MS);
 }
 
 function getDragonMembers() {
@@ -711,7 +711,7 @@ function wireAdminPanel() {
     if (!claimer)  { showAdminMsg('claim', 'Please enter a username.', true); return; }
     const ok = await setClaim(taskId, claimer);
     renderAllClaims();
-    showAdminMsg('claim', ok ? `Marked "${TASKS[taskId]?.title}" as claimed by ${claimer}.` : 'Saved locally. Shared sync will retry on the next poll/update.');
+    showAdminMsg('claim', ok ? `Marked "${TASKS[taskId]?.title}" as claimed by ${claimer}.` : `Saved locally only. Shared sync failed and will retry within ${CLAIMS_POLL_INTERVAL_MS / 1000} seconds.`);
   });
 
   // Unclaim button
@@ -720,7 +720,7 @@ function wireAdminPanel() {
     if (!taskId) { showAdminMsg('claim', 'Please select a task.', true); return; }
     const ok = await removeClaim(taskId);
     renderAllClaims();
-    showAdminMsg('claim', ok ? `Claim removed from "${TASKS[taskId]?.title}".` : 'Removed locally. Shared sync will retry on the next poll/update.');
+    showAdminMsg('claim', ok ? `Claim removed from "${TASKS[taskId]?.title}".` : `Removed locally only. Shared sync failed and will retry within ${CLAIMS_POLL_INTERVAL_MS / 1000} seconds.`);
   });
 
   // Add dragon member
