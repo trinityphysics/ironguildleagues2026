@@ -711,7 +711,7 @@ function wireAdminPanel() {
     if (!claimer)  { showAdminMsg('claim', 'Please enter a username.', true); return; }
     const ok = await setClaim(taskId, claimer);
     renderAllClaims();
-    showAdminMsg('claim', ok ? `Marked "${TASKS[taskId]?.title}" as claimed by ${claimer}.` : `Saved locally only. Shared sync failed and will retry within ${CLAIMS_POLL_INTERVAL_MS / 1000} seconds.`);
+    showAdminMsg('claim', ok ? `Marked "${TASKS[taskId]?.title}" as claimed by ${claimer}.` : 'Saved locally only. Re-apply this claim after shared storage is reachable.');
   });
 
   // Unclaim button
@@ -720,7 +720,7 @@ function wireAdminPanel() {
     if (!taskId) { showAdminMsg('claim', 'Please select a task.', true); return; }
     const ok = await removeClaim(taskId);
     renderAllClaims();
-    showAdminMsg('claim', ok ? `Claim removed from "${TASKS[taskId]?.title}".` : `Removed locally only. Shared sync failed and will retry within ${CLAIMS_POLL_INTERVAL_MS / 1000} seconds.`);
+    showAdminMsg('claim', ok ? `Claim removed from "${TASKS[taskId]?.title}".` : 'Removed locally only. Re-apply this change after shared storage is reachable.');
   });
 
   // Add dragon member
@@ -774,20 +774,24 @@ function wireQuickClaim() {
     const inp     = document.getElementById('quick-claim-input');
     const claimer = inp.value.trim();
     if (!claimer) return;
-    await setClaim(currentTaskId, claimer);
+    const ok = await setClaim(currentTaskId, claimer);
     renderAllClaims();
     // Update modal status
-    document.getElementById('task-modal-status').textContent = `✅ Claimed by: ${claimer}`;
-    document.getElementById('task-modal-status').className   = 'modal-status claimed';
+    document.getElementById('task-modal-status').textContent = ok
+      ? `✅ Claimed by: ${claimer}`
+      : '⚠️ Claimed locally only. Shared sync failed.';
+    document.getElementById('task-modal-status').className   = ok ? 'modal-status claimed' : 'modal-status unclaimed';
   });
 
   document.getElementById('quick-unclaim-btn')?.addEventListener('click', async () => {
     if (!currentTaskId) return;
-    await removeClaim(currentTaskId);
+    const ok = await removeClaim(currentTaskId);
     renderAllClaims();
-    document.getElementById('task-modal-status').textContent = '⏳ Unclaimed – up for grabs!';
+    document.getElementById('task-modal-status').textContent = ok
+      ? '⏳ Unclaimed – up for grabs!'
+      : '⚠️ Unclaimed locally only. Shared sync failed.';
     document.getElementById('task-modal-status').className   = 'modal-status unclaimed';
-    document.getElementById('quick-claim-input').value = '';
+    if (ok) document.getElementById('quick-claim-input').value = '';
   });
 }
 
